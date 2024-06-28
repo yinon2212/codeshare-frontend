@@ -1,0 +1,38 @@
+.btn {
+    background-color: #406AFF;
+    padding: 2px 30px;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.btn:hover {
+    opacity: 0.6;
+}
+
+.btn-disabled {
+    background-color: #364153;
+    color: white;
+    pointer-events: none;
+}
+
+.btn .btn-items {
+    display: flex;
+    align-items: center;
+}
+
+.btn .btn-items img {
+    margin-right: 10px;
+    height: 18px;
+    width: 18px;
+}
+
+.clean-btn {
+    background-color: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
