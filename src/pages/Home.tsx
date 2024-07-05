@@ -9,6 +9,7 @@ import IDCont from '../components/IDCont';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import {socket} from '../socket';
+import {URL} from '../Globals/consts';
 
 
 
@@ -17,7 +18,6 @@ const Home = () => {
   const [currentTheme, setCurrentTheme] = useState(themes[0]);
   const [value, setValue] = useState(currentEditorLan.codePreset);
   const [currentID, setCurrentID] = useState<string >("");
-  const [currentRoom, setCurrentRoom] = useState<any>(null);
   const [btnDisabled, setBtnDisabled] = useState(false);
   const params = useParams();
   const editorRef = useRef(null);
@@ -50,8 +50,6 @@ const Home = () => {
   useEffect(() => {
     let codeID = currentID !== "" ? currentID : params.id ? params.id : "";
     if(codeID !== ""){
-      if(currentRoom !== null) socket.emit('leave_room', currentRoom);
-      setCurrentRoom(codeID);
       socket.emit('join_room', codeID);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,7 +67,7 @@ const Home = () => {
 
    /*Handle the share button clicks*/
   const onShareBtnClick = () => {
-    axios.post('http://127.0.0.1:5000/share', {code: value, lan: currentEditorLan.language})
+    axios.post(URL + 'share', {code: value, lan: currentEditorLan.language})
       .then((res: any) => {
         setCurrentID(res.data.uniqid);
     })
@@ -82,8 +80,9 @@ const Home = () => {
 
    /*Handle editor changes*/
   function handleEditorChange(value: any, event: any) {
-    if(params.id){
-      let data = {newCode: value, codeID: params.id, lan: currentEditorLan.language};
+    if(params.id || currentID !== ""){
+      let id = params.id || currentID;
+      let data = {newCode: value, codeID: id, lan: currentEditorLan.language};
       
       socket.emit('change_code', (data));
 
