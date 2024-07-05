@@ -1,5 +1,4 @@
 import React, {useRef, useState, useEffect} from 'react';
-import logo from '../logo.svg';
 import '../App.css';
 import Editor from '@monaco-editor/react';
 import Button from '../components/Button';
@@ -7,9 +6,8 @@ import DropDown from '../components/DropDown';
 import {files, themes} from '../Globals/files';
 import shareIcon from '../assets/Share.svg';
 import IDCont from '../components/IDCont';
-import axios, {isCancel, AxiosError} from 'axios';
-import { useLocation, useParams } from 'react-router-dom';
-import {URL} from '../Globals/consts';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
 import {socket} from '../socket';
 
 
@@ -19,8 +17,9 @@ const Home = () => {
   const [currentTheme, setCurrentTheme] = useState(themes[0]);
   const [value, setValue] = useState(currentEditorLan.codePreset);
   const [currentID, setCurrentID] = useState<string >("");
+  const [currentRoom, setCurrentRoom] = useState<any>(null);
   const [btnDisabled, setBtnDisabled] = useState(false);
-  const [params, setParams] = useState(useParams());
+  const params = useParams();
   const editorRef = useRef(null);
   const codeItems = ['html', 'javascript'];
 
@@ -45,21 +44,28 @@ const Home = () => {
     return () => {
       socket.disconnect();
     };
-      
+     // eslint-disable-next-line react-hooks/exhaustive-deps 
   }, []);
 
   useEffect(() => {
     let codeID = currentID !== "" ? currentID : params.id ? params.id : "";
     if(codeID !== ""){
+      if(currentRoom !== null) socket.emit('leave_room', currentRoom);
+      setCurrentRoom(codeID);
       socket.emit('join_room', codeID);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentID]);
 
-  useEffect(() => {
-    socket.on('recieve_code_changes', ((newCode: {newCode: string}) => {
-      setValue(newCode.newCode);
-    }));
-  }, [socket]);
+  socket.on('recieve_code_changes', ((data: {data: {newCode: string, codeID: string, lan: string}}) => {
+    let newData = data.data;
+    let editorObj = {
+      language: newData.lan,
+      codePreset: newData.newCode
+    }
+    setEditorLan(editorObj);
+    setValue(editorObj.codePreset);
+  }));
 
    /*Handle the share button clicks*/
   const onShareBtnClick = () => {
@@ -77,7 +83,8 @@ const Home = () => {
    /*Handle editor changes*/
   function handleEditorChange(value: any, event: any) {
     if(params.id){
-      let data = {newCode: value, codeID: params.id};
+      let data = {newCode: value, codeID: params.id, lan: currentEditorLan.language};
+      
       socket.emit('change_code', (data));
 
       setBtnDisabled(false);
@@ -96,6 +103,9 @@ const Home = () => {
    /*Handle the click on the language drop down items*/
   const onEditorLanDDClick = (lan: any) => {
     setEditorLan(files[lan]);
+    if(params.id){
+      socket.emit('change_code', ({newCode: value, codeID: params.id, lan: files[lan].language}));
+    }
   }
 
   /*Handle the click on the themes drop down items*/
